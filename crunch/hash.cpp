@@ -31,10 +31,9 @@
 #include <filesystem>
 #include <chrono>
 #include <sstream>
-#include "tinydir.h"
-#include "str.hpp"
 
 using namespace std;
+using namespace filesystem;
 
 size_t GetHashBKDR(const string& str)
 {
@@ -68,7 +67,7 @@ void HashFile(size_t& hash, const string& file, bool checkTime)
 {
     if (checkTime)
     {
-        auto time = std::filesystem::last_write_time(file);
+        auto time = last_write_time(file);
         HashCombine(hash, std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count());
         return;
     }
@@ -89,27 +88,11 @@ void HashFile(size_t& hash, const string& file, bool checkTime)
 
 void HashFiles(size_t& hash, const string& root, bool checkTime)
 {
-    static string dot1 = ".";
-    static string dot2 = "..";
-    
-    tinydir_dir dir;
-    tinydir_open_sorted(&dir, StrToPath(root).data());
-    
-    for (int i = 0; i < static_cast<int>(dir.n_files); ++i)
-    {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-        
-        if (file.is_dir)
-        {
-            if (dot1 != PathToStr(file.name) && dot2 != PathToStr(file.name))
-                HashFiles(hash, PathToStr(file.path), checkTime);
-        }
-        else if (PathToStr(file.extension) == "png")
-            HashFile(hash, PathToStr(file.path), checkTime);
-    }
-    
-    tinydir_close(&dir);
+    for (const auto &entry : directory_iterator(root))
+        if (entry.is_directory())
+            HashFiles(hash, entry.path().string(), checkTime);
+        else
+            HashFile(hash, entry.path().string(), checkTime);
 }
 
 void HashData(size_t& hash, const char* data, size_t size)

@@ -25,8 +25,7 @@
  */
 
 #include "packer.hpp"
-#include "MaxRectsBinPack.h"
-#include "GuillotineBinPack.h"
+#include "third_party/MaxRectsBinPack.h"
 #include "binary.hpp"
 #include <iostream>
 #include <algorithm>
@@ -42,7 +41,7 @@ Packer::Packer(int width, int height, int pad)
 
 void Packer::Pack(vector<Bitmap*>& bitmaps, bool verbose, bool unique, bool rotate)
 {
-    MaxRectsBinPack packer(width, height);
+    MaxRectsBinPack packer(width, height, rotate);
     
     int ww = 0;
     int hh = 0;
@@ -70,7 +69,7 @@ void Packer::Pack(vector<Bitmap*>& bitmaps, bool verbose, bool unique, bool rota
         
         //If it's not a duplicate, pack it into the atlas
         {
-            Rect rect = packer.Insert(bitmap->width + pad, bitmap->height + pad, rotate, MaxRectsBinPack::RectBestShortSideFit);
+            Rect rect = packer.Insert(bitmap->width + pad, bitmap->height + pad, MaxRectsBinPack::RectBestShortSideFit);
             
             if (rect.width == 0 || rect.height == 0)
                 break;

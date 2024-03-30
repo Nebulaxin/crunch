@@ -27,10 +27,8 @@
 #include "bitmap.hpp"
 #include <iostream>
 #define LODEPNG_NO_COMPILE_CPP
-#include "lodepng.h"
-#include <algorithm>
+#include "third_party/lodepng.h"
 #include "hash.hpp"
-#include "time.hpp"
 
 using namespace std;
 

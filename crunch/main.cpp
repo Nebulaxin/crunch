@@ -72,6 +72,7 @@
             [byte] img_rotated          (if --rotate enabled)
  */
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -79,16 +80,15 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "tinydir.h"
 #include "bitmap.hpp"
 #include "packer.hpp"
 #include "binary.hpp"
 #include "hash.hpp"
-#include "str.hpp"
 #include "time.hpp"
 #define EXIT_SKIPPED 2
 
 using namespace std;
+using namespace filesystem;
 
 const char *version = "v0.12";
 const int binVersion = 0;
@@ -206,27 +206,14 @@ static void LoadBitmap(const string &prefix, const string &path)
 
 static void LoadBitmaps(const string &root, const string &prefix)
 {
-    static string dot1 = ".";
-    static string dot2 = "..";
-
-    tinydir_dir dir;
-    tinydir_open_sorted(&dir, StrToPath(root).data());
-
-    for (int i = 0; i < static_cast<int>(dir.n_files); ++i)
+    for (const auto &entry : directory_iterator(root))
     {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-
-        if (file.is_dir)
-        {
-            if (dot1 != PathToStr(file.name) && dot2 != PathToStr(file.name))
-                LoadBitmaps(PathToStr(file.path), prefix + PathToStr(file.name) + "/");
-        }
-        else if (PathToStr(file.extension) == "png")
-            LoadBitmap(prefix, PathToStr(file.path));
+        auto &path = entry.path();
+        if (entry.is_directory())
+            LoadBitmaps(path.string(), prefix + path.filename().string() + '/');
+        else if (path.extension().string() == ".png")
+            LoadBitmap(prefix, path.string());
     }
-
-    tinydir_close(&dir);
 }
 
 static void RemoveFile(string file)
@@ -280,45 +267,19 @@ static int GetPadding(const string &str)
 
 static void GetSubdirs(const string &root, vector<string> &subdirs)
 {
-    static string dot1 = ".";
-    static string dot2 = "..";
-
-    tinydir_dir dir;
-    tinydir_open_sorted(&dir, StrToPath(root).data());
-
-    for (int i = 0; i < static_cast<int>(dir.n_files); ++i)
-    {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-
-        if (file.is_dir)
-        {
-            if (dot1 != PathToStr(file.name) && dot2 != PathToStr(file.name))
-                subdirs.push_back(PathToStr(file.path));
-        }
-    }
-
-    tinydir_close(&dir);
+    for (const auto &entry : directory_iterator(root))
+        if (entry.is_directory())
+            subdirs.push_back(entry.path().string());
 }
 
 static void FindPackers(const string &root, const string &name, const string &ext, vector<string> &packers)
 {
-    static string dot1 = ".";
-    static string dot2 = "..";
-
-    tinydir_dir dir;
-    tinydir_open_sorted(&dir, StrToPath(root).data());
-
-    for (int i = 0; i < static_cast<int>(dir.n_files); ++i)
+    for (const auto &entry : directory_iterator(root))
     {
-        tinydir_file file;
-        tinydir_readfile_n(&dir, &file, i);
-
-        if (!file.is_dir && PathToStr(file.name).starts_with(name) && PathToStr(file.extension) == ext)
-            packers.push_back(PathToStr(file.path));
+        auto &path = entry.path();
+        if (entry.is_regular_file() && path.string().starts_with(name) && path.extension().string() == ext)
+            packers.push_back(path.string());
     }
-
-    tinydir_close(&dir);
 }
 
 static int Pack(size_t newHash, string &outputDir, string &name, vector<string> &inputs, string prefix = "")
