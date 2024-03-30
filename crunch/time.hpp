@@ -3,8 +3,8 @@
 
 #include <string>
 
-void StartTimer(const std::string& func);
-void StopTimer(const std::string& func);
+void StartTimer(const std::string &func);
+void StopTimer(const std::string &func);
 void WriteAllTimers();
 
 #endif

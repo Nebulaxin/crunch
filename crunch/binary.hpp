@@ -34,7 +34,7 @@
 using namespace std;
 
 void SetStringType(int t);
-void WriteString(ofstream& bin, const string& value);
+void WriteString(ofstream &bin, const string &value);
 void WriteStringNullTerminated(ofstream &bin, const string &value);
 void WriteStringPrefixed(ofstream &bin, const string &value);
 void WriteString7BitPrefixed(ofstream &bin, const string &value);

@@ -1,19 +1,19 @@
 /*
- 
+
  MIT License
- 
+
  Copyright (c) 2017 Chevy Ray Johnston
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in all
  copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,7 +21,7 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
- 
+
  */
 
 #include "hash.hpp"
@@ -35,35 +35,36 @@
 using namespace std;
 using namespace filesystem;
 
-size_t GetHashBKDR(const string& str)
+size_t GetHashBKDR(const string &str)
 {
     size_t seed = 131;
     size_t hash = 0;
     int len = str.length();
-    for (int i = 0; i < len; ++i) {
+    for (int i = 0; i < len; ++i)
+    {
         hash = hash * seed + str[i];
     }
     return hash & 0x7fffffff;
 }
 
-void HashCombine(size_t& hash, const string& s)
+void HashCombine(size_t &hash, const string &s)
 {
     // std::hash<T> hasher;
     // hash ^= hasher(v) + 0x9e3779b9 + (hash<<6) + (hash>>2);
     // std::hash can differ on different platforms
-    hash ^= GetHashBKDR(s) + 0x9e3779b9 + (hash<<6) + (hash>>2);
+    hash ^= GetHashBKDR(s) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 }
-void HashCombine(size_t& hash, size_t v)
+void HashCombine(size_t &hash, size_t v)
 {
-    hash ^= v + 0x9e3779b9 + (hash<<6) + (hash>>2);
+    hash ^= v + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 }
 
-void HashString(size_t& hash, const string& str)
+void HashString(size_t &hash, const string &str)
 {
     HashCombine(hash, str);
 }
 
-void HashFile(size_t& hash, const string& file, bool checkTime)
+void HashFile(size_t &hash, const string &file, bool checkTime)
 {
     if (checkTime)
     {
@@ -86,7 +87,7 @@ void HashFile(size_t& hash, const string& file, bool checkTime)
     HashCombine(hash, text);
 }
 
-void HashFiles(size_t& hash, const string& root, bool checkTime)
+void HashFiles(size_t &hash, const string &root, bool checkTime)
 {
     for (const auto &entry : directory_iterator(root))
         if (entry.is_directory())
@@ -95,13 +96,13 @@ void HashFiles(size_t& hash, const string& root, bool checkTime)
             HashFile(hash, entry.path().string(), checkTime);
 }
 
-void HashData(size_t& hash, const char* data, size_t size)
+void HashData(size_t &hash, const char *data, size_t size)
 {
     string str(data, size);
     HashCombine(hash, str);
 }
 
-bool LoadHash(size_t& hash, const string& file)
+bool LoadHash(size_t &hash, const string &file)
 {
     ifstream stream(file);
     if (stream)
@@ -114,7 +115,7 @@ bool LoadHash(size_t& hash, const string& file)
     return false;
 }
 
-void SaveHash(size_t hash, const string& file)
+void SaveHash(size_t hash, const string &file)
 {
     ofstream stream(file);
     stream << hash;
