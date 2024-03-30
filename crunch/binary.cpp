@@ -25,6 +25,7 @@
  */
 
 #include "binary.hpp"
+
 #include <iostream>
 #include <cstdint>
 

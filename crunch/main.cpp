@@ -33,8 +33,8 @@
 #include <string>
 #include <vector>
 
-#include "bitmap.hpp"
 #include "binary.hpp"
+#include "bitmap.hpp"
 #include "hash.hpp"
 #include "packer.hpp"
 #include "time.hpp"
@@ -96,7 +96,7 @@ static const string helpMessage = R"(
     
     binary format:
     crch (0x68637263 in hex or 1751347811 in decimal)
-    [int16] version (current version is 
+    [int16] version (current version is 0)
     [byte] --trim enabled
     [byte] --rotate enabled
     [byte] string type (0 - null-termainated, 1 - prefixed (int16), 2 - 7-bit prefixed)
@@ -151,12 +151,19 @@ static string GetFileName(const string &path)
     return name;
 }
 
+static string NormalizePath(const string &path)
+{
+    string str = path;
+    replace(str.begin(), str.end(), '\\', '/');
+    return str;
+}
+
 static void LoadBitmap(const string &prefix, const string &path)
 {
     if (optVerbose)
         cout << '\t' << path << endl;
 
-    bitmaps.push_back(new Bitmap(path, prefix + GetFileName(path), optPremultiply, optTrim, optVerbose));
+    bitmaps.push_back(new Bitmap(path, NormalizePath(prefix + GetFileName(path)), optPremultiply, optTrim, optVerbose));
 }
 
 static void LoadBitmaps(const string &root, const string &prefix)
@@ -171,27 +178,16 @@ static void LoadBitmaps(const string &root, const string &prefix)
     }
 }
 
-static void RemoveFile(string file)
+static void RemoveFile(const string &file)
 {
     remove(file.data());
 }
 
 static int GetPackSize(const string &str)
 {
-    if (str == "4096")
-        return 4096;
-    if (str == "2048")
-        return 2048;
-    if (str == "1024")
-        return 1024;
-    if (str == "512")
-        return 512;
-    if (str == "256")
-        return 256;
-    if (str == "128")
-        return 128;
-    if (str == "64")
-        return 64;
+    for (int i = 64; i <= 4096; i *= 2)
+        if (str == to_string(i))
+            return i;
     cerr << "invalid size: " << str << endl;
     exit(EXIT_FAILURE);
     return 0;
@@ -372,7 +368,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         for (size_t i = 0; i < packers.size(); ++i)
             packers[i]->SaveXml(name + (noZero ? "" : to_string(i)), xml, optTrim, optRotate);
         if (!optSplit)
-            xml << "</atlas>";
+            xml << "</atlas>" << endl;
         xml.close();
     }
 
@@ -386,18 +382,16 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         if (!optSplit)
         {
             json << '{' << endl;
-            json << "\t\"trim\":" << (optTrim ? "true" : "false") << ',' << endl;
-            json << "\t\"rotate\":" << (optRotate ? "true" : "false") << ',' << endl;
-            json << "\t\"textures\":[" << endl;
+            json << "\t\"trim\": " << (optTrim ? "true" : "false") << ',' << endl;
+            json << "\t\"rotate\": " << (optRotate ? "true" : "false") << ',' << endl;
+            json << "\t\"textures\": [" << endl;
         }
         for (size_t i = 0; i < packers.size(); ++i)
         {
-            json << "\t\t{" << endl;
             packers[i]->SaveJson(name + (noZero ? "" : to_string(i)), json, optTrim, optRotate);
-            json << "\t\t}";
             if (!optSplit)
             {
-                if (i != cachedPackers.size() - 1)
+                if (i != packers.size() - 1)
                     json << ',';
                 json << endl;
             }
@@ -405,7 +399,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         if (!optSplit)
         {
             json << "\t]" << endl;
-            json << '}';
+            json << '}' << endl;
         }
         json.close();
     }
@@ -716,9 +710,9 @@ int main(int argc, const char *argv[])
 
         ofstream json(outputDir + name + ".json");
         json << '{' << endl;
-        json << "\t\"trim\":" << (optTrim ? "true" : "false") << ',' << endl;
-        json << "\t\"rotate\":" << (optRotate ? "true" : "false") << ',' << endl;
-        json << "\t\"textures\":[" << endl;
+        json << "\t\"trim\": " << (optTrim ? "true" : "false") << ',' << endl;
+        json << "\t\"rotate\": " << (optRotate ? "true" : "false") << ',' << endl;
+        json << "\t\"textures\": [" << endl;
         for (size_t i = 0; i < cachedPackers.size(); ++i)
         {
             ifstream jsonCache(cachedPackers[i]);

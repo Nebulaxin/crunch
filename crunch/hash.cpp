@@ -25,12 +25,13 @@
  */
 
 #include "hash.hpp"
-#include <fstream>
-#include <vector>
-#include <iostream>
-#include <filesystem>
+
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 using namespace filesystem;

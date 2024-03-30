@@ -25,7 +25,9 @@
 */
 
 #include "bitmap.hpp"
+
 #include <iostream>
+
 #define LODEPNG_NO_COMPILE_CPP
 #include "third_party/lodepng.h"
 #include "hash.hpp"
