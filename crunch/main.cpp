@@ -161,9 +161,9 @@ static string NormalizePath(const string &path)
 static void LoadBitmap(const string &prefix, const string &path)
 {
     if (optVerbose)
-        cout << '\t' << path << endl;
+        cout << '\t' << NormalizePath(path) << endl;
 
-    bitmaps.push_back(new Bitmap(path, NormalizePath(prefix + GetFileName(path)), optPremultiply, optTrim, optVerbose));
+    bitmaps.push_back(new Bitmap(path, prefix + GetFileName(NormalizePath(path)), optPremultiply, optTrim, optVerbose));
 }
 
 static void LoadBitmaps(const string &root, const string &prefix)
@@ -447,7 +447,7 @@ int main(int argc, const char *argv[])
 
     // Get the output directory and name
     string outputDir, name;
-    SplitFileName(argv[1], &outputDir, &name, nullptr);
+    SplitFileName(NormalizePath(argv[1]), &outputDir, &name, nullptr);
 
     // Get all the input files and directories
     vector<string> inputs;
@@ -456,7 +456,7 @@ int main(int argc, const char *argv[])
     {
         string inputStr;
         getline(ss, inputStr, ',');
-        inputs.push_back(inputStr);
+        inputs.push_back(NormalizePath(inputStr));
     }
 
     // Get the options
