@@ -87,7 +87,8 @@ void WriteByte(ofstream &bin, char value)
 
 int16_t ReadShort(ifstream &bin)
 {
-    int16_t value;
-    bin.read(reinterpret_cast<char *>(&value), 2);
-    return value;
+    uint8_t high, low;
+    bin.read(reinterpret_cast<char *>(&low), 1);
+    bin.read(reinterpret_cast<char *>(&high), 1);
+    return high << 8 | low;
 }
