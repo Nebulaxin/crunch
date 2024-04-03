@@ -27,13 +27,12 @@
 #ifndef binary_hpp
 #define binary_hpp
 
+#include <cstdint>
 #include <fstream>
 #include <string>
-#include <cstdint>
 
 using namespace std;
 
-void SetStringType(int t);
 void WriteString(ofstream &bin, const string &value);
 void WriteStringNullTerminated(ofstream &bin, const string &value);
 void WriteStringPrefixed(ofstream &bin, const string &value);

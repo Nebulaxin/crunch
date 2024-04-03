@@ -26,27 +26,22 @@
 
 #include "binary.hpp"
 
+#include "options.hpp"
+
 #include <iostream>
 #include <cstdint>
 
-static int type;
-
-void SetStringType(int t)
-{
-    type = t;
-}
-
 void WriteString(ofstream &bin, const string &value)
 {
-    switch (type)
+    switch (options.binaryStringFormat)
     {
-    case 0:
+    case BinaryStringFormat::NullTerminated:
         WriteStringNullTerminated(bin, value);
         break;
-    case 1:
+    case BinaryStringFormat::Prefix16:
         WriteStringPrefixed(bin, value);
         break;
-    case 2:
+    case BinaryStringFormat::Prefix7:
         WriteString7BitPrefixed(bin, value);
         break;
     }

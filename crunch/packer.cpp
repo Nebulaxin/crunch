@@ -25,10 +25,13 @@
  */
 
 #include "packer.hpp"
+
+#include <algorithm>
+#include <iostream>
+
 #include "third_party/MaxRectsBinPack.h"
 #include "binary.hpp"
-#include <iostream>
-#include <algorithm>
+#include "options.hpp"
 
 using namespace std;
 using namespace rbp;
@@ -38,7 +41,7 @@ Packer::Packer(int width, int height, int pad)
 {
 }
 
-void Packer::Pack(vector<Bitmap *> &bitmaps, bool verbose, bool unique, bool rotate)
+void Packer::Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate)
 {
     MaxRectsBinPack packer(width, height, rotate);
 
@@ -48,7 +51,7 @@ void Packer::Pack(vector<Bitmap *> &bitmaps, bool verbose, bool unique, bool rot
     {
         auto bitmap = bitmaps.back();
 
-        if (verbose)
+        if (options.verbose)
             cout << '\t' << bitmaps.size() << ": " << bitmap->name << endl;
 
         // Check to see if this is a duplicate of an already packed bitmap

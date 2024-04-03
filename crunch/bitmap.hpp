@@ -27,8 +27,8 @@
 #ifndef bitmap_hpp
 #define bitmap_hpp
 
-#include <string>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -44,7 +44,7 @@ struct Bitmap
     int frameH;
     uint32_t *data;
     size_t hashValue;
-    Bitmap(const string &file, const string &name, bool premultiply, bool trim, bool verbose);
+    Bitmap(const string &file, const string &name, bool premultiply, bool trim);
     Bitmap(int width, int height);
     ~Bitmap();
     void SaveAs(const string &file);

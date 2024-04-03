@@ -31,10 +31,11 @@
 #define LODEPNG_NO_COMPILE_CPP
 #include "third_party/lodepng.h"
 #include "hash.hpp"
+#include "options.hpp"
 
 using namespace std;
 
-Bitmap::Bitmap(const string &file, const string &name, bool premultiply, bool trim, bool verbose)
+Bitmap::Bitmap(const string &file, const string &name, bool premultiply, bool trim)
     : name(name)
 {
     // Load the png file
@@ -45,6 +46,7 @@ Bitmap::Bitmap(const string &file, const string &name, bool premultiply, bool tr
         cerr << "failed to load png: " << file << endl;
         exit(EXIT_FAILURE);
     }
+
     int w = static_cast<int>(pw);
     int h = static_cast<int>(ph);
     uint32_t *pixels = reinterpret_cast<uint32_t *>(pdata);
@@ -97,7 +99,7 @@ Bitmap::Bitmap(const string &file, const string &name, bool premultiply, bool tr
             minY = 0;
             maxX = w - 1;
             maxY = h - 1;
-            if (verbose)
+            if (options.verbose)
                 cout << "image is completely transparent: " << file << endl;
         }
     }

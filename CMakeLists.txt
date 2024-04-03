@@ -11,7 +11,9 @@ add_executable(crunch
     
     crunch/binary.cpp
     crunch/bitmap.cpp
+    crunch/cli.cpp
     crunch/hash.cpp
+    crunch/options.cpp
     crunch/packer.cpp
     crunch/time.cpp
     )

@@ -35,7 +35,9 @@
 
 #include "binary.hpp"
 #include "bitmap.hpp"
+#include "cli.hpp"
 #include "hash.hpp"
+#include "options.hpp"
 #include "packer.hpp"
 #include "time.hpp"
 
@@ -44,76 +46,10 @@
 using namespace std;
 using namespace filesystem;
 
-const string version = "v0.12";
 const int binVersion = 0;
 
-static int optSize;
-static int optWidth;
-static int optHeight;
-static int optPadding;
-static int optBinstr;
-static bool optXml;
-static bool optBinary;
-static bool optJson;
-static bool optPremultiply;
-static bool optTrim;
-static bool optVerbose;
-static bool optForce;
-static bool optUnique;
-static bool optRotate;
-static bool optTime;
-static bool optSplit;
-static bool optNoZero;
 static vector<Bitmap *> bitmaps;
 static vector<Packer *> packers;
-
-static const string helpMessage = R"(
-    usage:
-       crunch [OUTPUT] [INPUT1,INPUT2,INPUT3...] [OPTIONS...]
-    
-    example:
-       crunch bin/atlases/atlas assets/characters,assets/tiles -p -t -v -u -r
-    
-    options:
-       -d    --default           use default settings (-x -p -t -u)
-       -x    --xml               saves the atlas data as a .xml file
-       -b    --binary            saves the atlas data as a .bin file
-       -j    --json              saves the atlas data as a .json file
-       -p    --premultiply       premultiplies the pixels of the bitmaps by their alpha channel
-       -t    --trim              trims excess transparency off the bitmaps
-       -v    --verbose           print to the debug console as the packer works
-       -f    --force             ignore the hash, forcing the packer to repack
-       -u    --unique            remove duplicate bitmaps from the atlas
-       -r    --rotate            enabled rotating bitmaps 90 degrees clockwise when packing
-       -s#   --size#             max atlas size (# can be 4096, 2048, 1024, 512, 256, 128, or 64)
-       -w#   --width#            max atlas width (overrides --size) (# can be 4096, 2048, 1024, 512, 256, 128, or 64)
-       -h#   --height#           max atlas height (overrides --size) (# can be 4096, 2048, 1024, 512, 256, 128, or 64)
-       -p#   --pad#              padding between images (# can be from 0 to 16)
-       -bs%  --binstr%           string type in binary format (% can be: n - null-termainated, p - prefixed (int16), 7 - 7-bit prefixed)
-       -tm   --time              use file's last write time instead of its content for hashing
-       -sp   --split             split output textures by subdirectories
-       -nz   --nozero            if there's ony one packed texture, then zero at the end of its name will be omitted (ex. images0.png -> images.png)
-    
-    binary format:
-    crch (0x68637263 in hex or 1751347811 in decimal)
-    [int16] version (current version is 0)
-    [byte] --trim enabled
-    [byte] --rotate enabled
-    [byte] string type (0 - null-termainated, 1 - prefixed (int16), 2 - 7-bit prefixed)
-    [int16] num_textures (below block is repeated this many times)
-      [string] name
-        [int16] num_images (below block is repeated this many times)
-          [string] img_name
-          [int16] img_x
-          [int16] img_y
-          [int16] img_width
-          [int16] img_height
-          [int16] img_frame_x         (if --trim enabled)
-          [int16] img_frame_y         (if --trim enabled)
-          [int16] img_frame_width     (if --trim enabled)
-          [int16] img_frame_height    (if --trim enabled)
-          [byte] img_rotated          (if --rotate enabled)
-    )";
 
 static void SplitFileName(const string &path, string *dir, string *name, string *ext)
 {
@@ -160,10 +96,10 @@ static string NormalizePath(const string &path)
 
 static void LoadBitmap(const string &prefix, const string &path)
 {
-    if (optVerbose)
+    if (options.verbose)
         cout << '\t' << NormalizePath(path) << endl;
 
-    bitmaps.push_back(new Bitmap(path, prefix + GetFileName(NormalizePath(path)), optPremultiply, optTrim, optVerbose));
+    bitmaps.push_back(new Bitmap(path, prefix + GetFileName(NormalizePath(path)), options.premultiply, options.trim));
 }
 
 static void LoadBitmaps(const string &root, const string &prefix)
@@ -181,39 +117,6 @@ static void LoadBitmaps(const string &root, const string &prefix)
 static void RemoveFile(const string &file)
 {
     remove(file.data());
-}
-
-static int GetPackSize(const string &str)
-{
-    for (int i = 64; i <= 4096; i *= 2)
-        if (str == to_string(i))
-            return i;
-    cerr << "invalid size: " << str << endl;
-    exit(EXIT_FAILURE);
-    return 0;
-}
-
-static int GetBinStrType(const string &str)
-{
-    if (str == "n" || str == "N")
-        return 0;
-    if (str == "p" || str == "P")
-        return 1;
-    if (str == "7")
-        return 2;
-    cerr << "invalid binary string type: " << str << endl;
-    exit(EXIT_FAILURE);
-    return 0;
-}
-
-static int GetPadding(const string &str)
-{
-    for (int i = 0; i <= 16; ++i)
-        if (str == to_string(i))
-            return i;
-    cerr << "invalid padding value: " << str << endl;
-    exit(EXIT_FAILURE);
-    return 1;
 }
 
 static void GetSubdirs(const string &root, vector<string> &subdirs)
@@ -235,24 +138,24 @@ static void FindPackers(const string &root, const string &name, const string &ex
 
 static int Pack(size_t newHash, string &outputDir, string &name, vector<string> &inputs, string prefix = "")
 {
-    if (optSplit)
+    if (options.splitSubdirectories)
         StartTimer(prefix);
     StartTimer("hashing input");
     for (size_t i = 0; i < inputs.size(); ++i)
     {
         if (inputs[i].rfind('.') == string::npos)
-            HashFiles(newHash, inputs[i], optTime);
+            HashFiles(newHash, inputs[i], options.useTimeForHash);
         else
-            HashFile(newHash, inputs[i], optTime);
+            HashFile(newHash, inputs[i], options.useTimeForHash);
     }
     StopTimer("hashing input");
     // Load the old hash
     size_t oldHash;
     if (LoadHash(oldHash, outputDir + name + ".hash"))
     {
-        if (!optForce && newHash == oldHash)
+        if (!options.force && newHash == oldHash)
         {
-            if (!optSplit)
+            if (!options.splitSubdirectories)
             {
                 cout << "atlas is unchanged: " << name << endl;
 
@@ -275,11 +178,11 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
     StartTimer("loading bitmaps");
 
     // Load the bitmaps from all the input files and directories
-    if (optVerbose)
+    if (options.verbose)
         cout << "loading images..." << endl;
     for (size_t i = 0; i < inputs.size(); ++i)
     {
-        if (!optSplit && inputs[i].rfind('.') != string::npos)
+        if (!options.splitSubdirectories && inputs[i].rfind('.') != string::npos)
             LoadBitmap("", inputs[i]);
         else
             LoadBitmaps(inputs[i], prefix);
@@ -296,13 +199,13 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
     // Pack the bitmaps
     while (!bitmaps.empty())
     {
-        if (optVerbose)
+        if (options.verbose)
             cout << "packing " << bitmaps.size() << " images..." << endl;
-        auto packer = new Packer(optWidth, optHeight, optPadding);
-        packer->Pack(bitmaps, optVerbose, optUnique, optRotate);
+        auto packer = new Packer(options.width, options.height, options.padding);
+        packer->Pack(bitmaps, options.unique, options.rotate);
         packers.push_back(packer);
-        if (optVerbose)
-            cout << "finished packing: " << name << (optNoZero && bitmaps.empty() ? "" : to_string(packers.size() - 1)) << " (" << packer->width << " x " << packer->height << ')' << endl;
+        if (options.verbose)
+            cout << "finished packing: " << name << (options.noZero && bitmaps.empty() ? "" : to_string(packers.size() - 1)) << " (" << packer->width << " x " << packer->height << ')' << endl;
 
         if (packer->bitmaps.empty())
         {
@@ -312,14 +215,14 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
     }
     StopTimer("packing bitmaps");
 
-    bool noZero = optNoZero && packers.size() == 1;
+    bool noZero = options.noZero && packers.size() == 1;
 
     StartTimer("saving atlas png");
     // Save the atlas image
     for (size_t i = 0; i < packers.size(); ++i)
     {
         string pngName = outputDir + name + (noZero ? "" : to_string(i)) + ".png";
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing png: " << pngName << endl;
         packers[i]->SavePng(pngName);
     }
@@ -327,76 +230,75 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
 
     StartTimer("saving atlas");
     // Save the atlas binary
-    if (optBinary)
+    if (options.binary)
     {
-        SetStringType(optBinstr);
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing bin: " << outputDir << name << ".bin" << endl;
 
         ofstream bin(outputDir + name + ".bin", ios::binary);
 
-        if (!optSplit)
+        if (!options.splitSubdirectories)
         {
             WriteByte(bin, 'c');
             WriteByte(bin, 'r');
             WriteByte(bin, 'c');
             WriteByte(bin, 'h');
             WriteShort(bin, binVersion);
-            WriteByte(bin, optTrim);
-            WriteByte(bin, optRotate);
-            WriteByte(bin, optBinstr);
+            WriteByte(bin, options.trim);
+            WriteByte(bin, options.rotate);
+            WriteByte(bin, (char)options.binaryStringFormat);
         }
         WriteShort(bin, (int16_t)packers.size());
         for (size_t i = 0; i < packers.size(); ++i)
-            packers[i]->SaveBin(name + (noZero ? "" : to_string(i)), bin, optTrim, optRotate);
+            packers[i]->SaveBin(name + (noZero ? "" : to_string(i)), bin, options.trim, options.rotate);
         bin.close();
     }
 
     // Save the atlas xml
-    if (optXml)
+    if (options.xml)
     {
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing xml: " << outputDir << name << ".xml" << endl;
 
         ofstream xml(outputDir + name + ".xml");
-        if (!optSplit)
+        if (!options.splitSubdirectories)
         {
             xml << "<atlas>" << endl;
-            xml << "\t<trim>" << (optTrim ? "true" : "false") << "</trim>" << endl;
-            xml << "\t<rotate>" << (optRotate ? "true" : "false") << "</trim>" << endl;
+            xml << "\t<trim>" << (options.trim ? "true" : "false") << "</trim>" << endl;
+            xml << "\t<rotate>" << (options.rotate ? "true" : "false") << "</trim>" << endl;
         }
         for (size_t i = 0; i < packers.size(); ++i)
-            packers[i]->SaveXml(name + (noZero ? "" : to_string(i)), xml, optTrim, optRotate);
-        if (!optSplit)
+            packers[i]->SaveXml(name + (noZero ? "" : to_string(i)), xml, options.trim, options.rotate);
+        if (!options.splitSubdirectories)
             xml << "</atlas>" << endl;
         xml.close();
     }
 
     // Save the atlas json
-    if (optJson)
+    if (options.json)
     {
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing json: " << outputDir << name << ".json" << endl;
 
         ofstream json(outputDir + name + ".json");
-        if (!optSplit)
+        if (!options.splitSubdirectories)
         {
             json << '{' << endl;
-            json << "\t\"trim\": " << (optTrim ? "true" : "false") << ',' << endl;
-            json << "\t\"rotate\": " << (optRotate ? "true" : "false") << ',' << endl;
+            json << "\t\"trim\": " << (options.trim ? "true" : "false") << ',' << endl;
+            json << "\t\"rotate\": " << (options.rotate ? "true" : "false") << ',' << endl;
             json << "\t\"textures\": [" << endl;
         }
         for (size_t i = 0; i < packers.size(); ++i)
         {
-            packers[i]->SaveJson(name + (noZero ? "" : to_string(i)), json, optTrim, optRotate);
-            if (!optSplit)
+            packers[i]->SaveJson(name + (noZero ? "" : to_string(i)), json, options.trim, options.rotate);
+            if (!options.splitSubdirectories)
             {
                 if (i != packers.size() - 1)
                     json << ',';
                 json << endl;
             }
         }
-        if (!optSplit)
+        if (!options.splitSubdirectories)
         {
             json << "\t]" << endl;
             json << '}' << endl;
@@ -408,7 +310,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
     // Save the new hash
     SaveHash(newHash, outputDir + name + ".hash");
 
-    if (optSplit)
+    if (options.splitSubdirectories)
         StopTimer(prefix);
 
     return EXIT_SUCCESS;
@@ -416,32 +318,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
 
 int main(int argc, const char *argv[])
 {
-    // Print out passed arguments
-    for (int i = 0; i < argc; ++i)
-        cout << argv[i] << ' ';
-    cout << endl;
-
-    if (argc < 3)
-    {
-        if (argc == 2)
-        {
-            string arg = argv[1];
-            if (arg == "-h" || arg == "-?" || arg == "--help")
-            {
-                cout << helpMessage << endl;
-                return EXIT_SUCCESS;
-            }
-            else if (arg == "--version")
-            {
-                cout << "crunch " << version << endl;
-                return EXIT_SUCCESS;
-            }
-        }
-
-        cerr << "invalid input, expected: \"crunch [OUTPUT] [INPUT1,INPUT2,INPUT3...] [OPTIONS...]\"" << endl;
-
-        return EXIT_FAILURE;
-    }
+    PrintHelp(argc, argv);
 
     StartTimer("total");
 
@@ -459,113 +336,7 @@ int main(int argc, const char *argv[])
         inputs.push_back(NormalizePath(inputStr));
     }
 
-    // Get the options
-    optSize = 4096;
-    optPadding = 1;
-    optBinstr = 0;
-    optXml = false;
-    optBinary = false;
-    optJson = false;
-    optPremultiply = false;
-    optTrim = false;
-    optVerbose = false;
-    optForce = false;
-    optUnique = false;
-    optTime = false;
-    optSplit = false;
-    optNoZero = false;
-    for (int i = 3; i < argc; ++i)
-    {
-        string arg = argv[i];
-        if (arg == "-d" || arg == "--default")
-            optXml = optPremultiply = optTrim = optUnique = true;
-        else if (arg == "-x" || arg == "--xml")
-            optXml = true;
-        else if (arg == "-b" || arg == "--binary")
-            optBinary = true;
-        else if (arg == "-j" || arg == "--json")
-            optJson = true;
-        else if (arg == "-p" || arg == "--premultiply")
-            optPremultiply = true;
-        else if (arg == "-t" || arg == "--trim")
-            optTrim = true;
-        else if (arg == "-v" || arg == "--verbose")
-            optVerbose = true;
-        else if (arg == "-f" || arg == "--force")
-            optForce = true;
-        else if (arg == "-u" || arg == "--unique")
-            optUnique = true;
-        else if (arg == "-r" || arg == "--rotate")
-            optRotate = true;
-        else if (arg == "-tm" || arg == "--time")
-            optTime = true;
-        else if (arg == "-sp" || arg == "--split")
-            optSplit = true;
-        else if (arg == "-nz" || arg == "--nozero")
-            optNoZero = true;
-
-        else if (arg.find("--binstr") == 0)
-            optBinstr = GetBinStrType(arg.substr(8));
-        else if (arg.find("-bs") == 0)
-            optBinstr = GetBinStrType(arg.substr(3));
-
-        else if (arg.find("--size") == 0)
-            optSize = GetPackSize(arg.substr(6));
-        else if (arg.find("-s") == 0)
-            optSize = GetPackSize(arg.substr(2));
-
-        else if (arg.find("--width") == 0)
-            optWidth = GetPackSize(arg.substr(7));
-        else if (arg.find("-w") == 0)
-            optWidth = GetPackSize(arg.substr(2));
-
-        else if (arg.find("--height") == 0)
-            optHeight = GetPackSize(arg.substr(8));
-        else if (arg.find("-h") == 0)
-            optHeight = GetPackSize(arg.substr(2));
-
-        else if (arg.find("--pad") == 0)
-            optPadding = GetPadding(arg.substr(5));
-        else if (arg.find("-p") == 0)
-            optPadding = GetPadding(arg.substr(2));
-
-        else
-        {
-            cerr << "unexpected argument: " << arg << endl;
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (optWidth == 0)
-        optWidth = optSize;
-    if (optHeight == 0)
-        optHeight = optSize;
-
-    if (optVerbose)
-    {
-        cout << "options..." << endl;
-        cout << "\t--xml: " << (optXml ? "true" : "false") << endl;
-        cout << "\t--binary: " << (optBinary ? "true" : "false") << endl;
-        cout << "\t--json: " << (optJson ? "true" : "false") << endl;
-        cout << "\t--premultiply: " << (optPremultiply ? "true" : "false") << endl;
-        cout << "\t--trim: " << (optTrim ? "true" : "false") << endl;
-        cout << "\t--verbose: " << (optVerbose ? "true" : "false") << endl;
-        cout << "\t--force: " << (optForce ? "true" : "false") << endl;
-        cout << "\t--unique: " << (optUnique ? "true" : "false") << endl;
-        cout << "\t--rotate: " << (optRotate ? "true" : "false") << endl;
-        if (optWidth == optHeight)
-            cout << "\t--size: " << optWidth << endl;
-        else
-        {
-            cout << "\t--width: " << optWidth << endl;
-            cout << "\t--height: " << optHeight << endl;
-        }
-        cout << "\t--pad: " << optPadding << endl;
-        cout << "\t--binstr: " << (optBinstr == 0 ? "n" : (optBinstr == 1 ? "p" : "7")) << endl;
-        cout << "\t--time: " << (optTime ? "true" : "false") << endl;
-        cout << "\t--split: " << (optSplit ? "true" : "false") << endl;
-        cout << "\t--nozero: " << (optNoZero ? "true" : "false") << endl;
-    }
+    ParseArguments(argc, argv, 3);
 
     StartTimer("hashing input");
     // Hash the arguments and input directories
@@ -574,7 +345,7 @@ int main(int argc, const char *argv[])
         HashString(newHash, argv[i]);
     StopTimer("hashing input");
 
-    if (!optSplit)
+    if (!options.splitSubdirectories)
     {
         int result = Pack(newHash, outputDir, name, inputs);
 
@@ -639,10 +410,9 @@ int main(int argc, const char *argv[])
 
     StartTimer("saving atlas");
     vector<string> cachedPackers;
-    if (optBinary)
+    if (options.binary)
     {
-        SetStringType(optBinstr);
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing bin: " << outputDir << name << ".bin" << endl;
 
         vector<ifstream *> cacheFiles;
@@ -655,9 +425,9 @@ int main(int argc, const char *argv[])
         WriteByte(bin, 'c');
         WriteByte(bin, 'h');
         WriteShort(bin, binVersion);
-        WriteByte(bin, optTrim);
-        WriteByte(bin, optRotate);
-        WriteByte(bin, optBinstr);
+        WriteByte(bin, options.trim);
+        WriteByte(bin, options.rotate);
+        WriteByte(bin, (char)options.binaryStringFormat);
         int16_t imageCount = 0;
         for (size_t i = 0; i < cachedPackers.size(); ++i)
         {
@@ -676,9 +446,9 @@ int main(int argc, const char *argv[])
         bin.close();
     }
 
-    if (optXml)
+    if (options.xml)
     {
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing xml: " << outputDir << name << ".xml" << endl;
 
         cachedPackers.clear();
@@ -687,8 +457,8 @@ int main(int argc, const char *argv[])
 
         ofstream xml(outputDir + name + ".xml");
         xml << "<atlas>" << endl;
-        xml << "\t<trim>" << (optTrim ? "true" : "false") << "</trim>" << endl;
-        xml << "\t<rotate>" << (optRotate ? "true" : "false") << "</trim>" << endl;
+        xml << "\t<trim>" << (options.trim ? "true" : "false") << "</trim>" << endl;
+        xml << "\t<rotate>" << (options.rotate ? "true" : "false") << "</trim>" << endl;
         for (size_t i = 0; i < cachedPackers.size(); ++i)
         {
             ifstream xmlCache(cachedPackers[i]);
@@ -699,9 +469,9 @@ int main(int argc, const char *argv[])
         xml.close();
     }
 
-    if (optJson)
+    if (options.json)
     {
-        if (optVerbose)
+        if (options.verbose)
             cout << "writing json: " << outputDir << name << ".json" << endl;
 
         cachedPackers.clear();
@@ -710,8 +480,8 @@ int main(int argc, const char *argv[])
 
         ofstream json(outputDir + name + ".json");
         json << '{' << endl;
-        json << "\t\"trim\": " << (optTrim ? "true" : "false") << ',' << endl;
-        json << "\t\"rotate\": " << (optRotate ? "true" : "false") << ',' << endl;
+        json << "\t\"trim\": " << (options.trim ? "true" : "false") << ',' << endl;
+        json << "\t\"rotate\": " << (options.rotate ? "true" : "false") << ',' << endl;
         json << "\t\"textures\": [" << endl;
         for (size_t i = 0; i < cachedPackers.size(); ++i)
         {

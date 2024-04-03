@@ -27,9 +27,10 @@
 #ifndef packer_hpp
 #define packer_hpp
 
-#include <vector>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+
 #include "bitmap.hpp"
 
 using namespace std;
@@ -53,7 +54,7 @@ struct Packer
     unordered_map<size_t, int> dupLookup;
 
     Packer(int width, int height, int pad);
-    void Pack(vector<Bitmap *> &bitmaps, bool verbose, bool unique, bool rotate);
+    void Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate);
     void SavePng(const string &file);
     void SaveXml(const string &name, ofstream &xml, bool trim, bool rotate);
     void SaveBin(const string &name, ofstream &bin, bool trim, bool rotate);
