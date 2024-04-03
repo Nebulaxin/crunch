@@ -39,7 +39,6 @@ void WriteStringPrefixed(ofstream &bin, const string &value);
 void WriteString7BitPrefixed(ofstream &bin, const string &value);
 void WriteShort(ofstream &bin, int16_t value);
 void WriteByte(ofstream &bin, char value);
-string ReadString(ifstream &bin);
 int16_t ReadShort(ifstream &bin);
 
 #endif

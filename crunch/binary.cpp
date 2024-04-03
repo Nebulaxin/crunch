@@ -85,16 +85,6 @@ void WriteByte(ofstream &bin, char value)
     bin.write(&value, 1);
 }
 
-string ReadString(ifstream &bin)
-{
-    char data[256];
-    bin.read(data, 1);
-    char *chr = data;
-    while (*chr != '\0')
-        bin.read(++chr, 1);
-    return data;
-}
-
 int16_t ReadShort(ifstream &bin)
 {
     int16_t value;
