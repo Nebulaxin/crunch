@@ -15,7 +15,6 @@ add_executable(crunch
     crunch/hash.cpp
     crunch/options.cpp
     crunch/packer.cpp
-    crunch/time.cpp
     )
 
 set(CMAKE_CXX_STANDARD 20)
