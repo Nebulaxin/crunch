@@ -39,7 +39,6 @@
 #include "hash.hpp"
 #include "options.hpp"
 #include "packer.hpp"
-#include "time.hpp"
 
 #define EXIT_SKIPPED 2
 
@@ -138,9 +137,6 @@ static void FindPackers(const string &root, const string &name, const string &ex
 
 static int Pack(size_t newHash, string &outputDir, string &name, vector<string> &inputs, string prefix = "")
 {
-    if (options.splitSubdirectories)
-        StartTimer(prefix);
-    StartTimer("hashing input");
     for (size_t i = 0; i < inputs.size(); ++i)
     {
         if (inputs[i].rfind('.') == string::npos)
@@ -148,7 +144,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         else
             HashFile(newHash, inputs[i], options.useTimeForHash);
     }
-    StopTimer("hashing input");
+
     // Load the old hash
     size_t oldHash;
     if (LoadHash(oldHash, outputDir + name + ".hash"))
@@ -161,7 +157,6 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
 
                 return EXIT_SUCCESS;
             }
-            StopTimer(prefix);
             return EXIT_SKIPPED;
         }
     }
@@ -175,8 +170,6 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
     for (size_t i = 0; i < 16; ++i)
         RemoveFile(outputDir + name + to_string(i) + ".png");
 
-    StartTimer("loading bitmaps");
-
     // Load the bitmaps from all the input files and directories
     if (options.verbose)
         cout << "loading images..." << endl;
@@ -187,15 +180,11 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         else
             LoadBitmaps(inputs[i], prefix);
     }
-    StopTimer("loading bitmaps");
 
-    StartTimer("sorting bitmaps");
     // Sort the bitmaps by area
     stable_sort(bitmaps.begin(), bitmaps.end(), [](const Bitmap *a, const Bitmap *b)
                 { return (a->width * a->height) < (b->width * b->height); });
-    StopTimer("sorting bitmaps");
 
-    StartTimer("packing bitmaps");
     // Pack the bitmaps
     while (!bitmaps.empty())
     {
@@ -213,11 +202,9 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
             return EXIT_FAILURE;
         }
     }
-    StopTimer("packing bitmaps");
 
     bool noZero = options.noZero && packers.size() == 1;
 
-    StartTimer("saving atlas png");
     // Save the atlas image
     for (size_t i = 0; i < packers.size(); ++i)
     {
@@ -226,9 +213,7 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
             cout << "writing png: " << pngName << endl;
         packers[i]->SavePng(pngName);
     }
-    StopTimer("saving atlas png");
 
-    StartTimer("saving atlas");
     // Save the atlas binary
     if (options.binary)
     {
@@ -305,13 +290,9 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
         }
         json.close();
     }
-    StopTimer("saving atlas");
 
     // Save the new hash
     SaveHash(newHash, outputDir + name + ".hash");
-
-    if (options.splitSubdirectories)
-        StopTimer(prefix);
 
     return EXIT_SUCCESS;
 }
@@ -319,8 +300,6 @@ static int Pack(size_t newHash, string &outputDir, string &name, vector<string> 
 int main(int argc, const char *argv[])
 {
     PrintHelp(argc, argv);
-
-    StartTimer("total");
 
     // Get the output directory and name
     string outputDir, name;
@@ -338,12 +317,10 @@ int main(int argc, const char *argv[])
 
     ParseArguments(argc, argv, 3);
 
-    StartTimer("hashing input");
     // Hash the arguments and input directories
     size_t newHash = 0;
     for (int i = 1; i < argc; ++i)
         HashString(newHash, argv[i]);
-    StopTimer("hashing input");
 
     if (!options.splitSubdirectories)
     {
@@ -351,10 +328,6 @@ int main(int argc, const char *argv[])
 
         if (result != EXIT_SUCCESS)
             return result;
-
-        StopTimer("total");
-
-        WriteAllTimers();
 
         return EXIT_SUCCESS;
     }
@@ -399,8 +372,6 @@ int main(int argc, const char *argv[])
     {
         cout << "atlas is unchanged: " << name << endl;
 
-        StopTimer("total");
-        WriteAllTimers();
         return EXIT_SUCCESS;
     }
 
@@ -408,7 +379,6 @@ int main(int argc, const char *argv[])
     RemoveFile(outputDir + name + ".xml");
     RemoveFile(outputDir + name + ".json");
 
-    StartTimer("saving atlas");
     vector<string> cachedPackers;
     if (options.binary)
     {
@@ -496,12 +466,6 @@ int main(int argc, const char *argv[])
         json << '}' << endl;
         json.close();
     }
-
-    StopTimer("saving atlas");
-
-    StopTimer("total");
-
-    WriteAllTimers();
 
     return EXIT_SUCCESS;
 }
