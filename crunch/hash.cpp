@@ -36,88 +36,73 @@
 using namespace std;
 using namespace filesystem;
 
-size_t GetHashBKDR(const string &str)
-{
-    size_t seed = 131;
-    size_t hash = 0;
-    int len = str.length();
-    for (int i = 0; i < len; ++i)
-    {
-        hash = hash * seed + str[i];
-    }
-    return hash & 0x7fffffff;
-}
-
-void HashCombine(size_t &hash, const string &s)
-{
-    // std::hash<T> hasher;
-    // hash ^= hasher(v) + 0x9e3779b9 + (hash<<6) + (hash>>2);
-    // std::hash can differ on different platforms
-    hash ^= GetHashBKDR(s) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-}
-void HashCombine(size_t &hash, size_t v)
+void HashCombine(uint64_t &hash, uint64_t v)
 {
     hash ^= v + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 }
 
-void HashString(size_t &hash, const string &str)
+void HashData(uint64_t &hash, const char *data, uint64_t size)
 {
-    HashCombine(hash, str);
+    uint64_t seed = 131;
+    uint64_t v = 0;
+    for (int i = 0; i < size; ++i)
+    {
+        v = v * seed + data[i];
+    }
+    v &= 0x7fffffff;
+
+    HashCombine(hash, v);
 }
 
-void HashFile(size_t &hash, const string &file, bool checkTime)
+void HashString(uint64_t &hash, const string &str)
 {
+    HashData(hash, str.data(), str.size());
+}
+
+void HashFile(uint64_t &hash, const string &file, bool checkTime)
+{
+    directory_entry entry{file};
     if (checkTime)
     {
-        auto time = last_write_time(file);
+        auto time = entry.last_write_time();
         HashCombine(hash, std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count());
         return;
     }
 
-    ifstream stream(file, ios::binary | ios::ate);
-    streamsize size = stream.tellg();
-    stream.seekg(0, ios::beg);
-    vector<char> buffer(size + 1);
+    ifstream stream(file, ios::binary);
+    int size = entry.file_size();
+    vector<char> buffer(size);
     if (!stream.read(buffer.data(), size))
     {
         cerr << "failed to read file: " << file << endl;
         exit(EXIT_FAILURE);
     }
-    buffer[size] = '\0';
-    string text(buffer.begin(), buffer.end());
-    HashCombine(hash, text);
+    HashData(hash, buffer.data(), size);
 }
 
-void HashFiles(size_t &hash, const string &root, bool checkTime)
+void HashFiles(uint64_t &hash, const string &root, bool checkTime)
 {
-    for (const auto &entry : directory_iterator(root))
+    for (const auto &entry : recursive_directory_iterator(root))
+    {
         if (entry.is_directory())
-            HashFiles(hash, entry.path().string(), checkTime);
+            HashString(hash, entry.path().string());
         else
             HashFile(hash, entry.path().string(), checkTime);
+    }
 }
 
-void HashData(size_t &hash, const char *data, size_t size)
-{
-    string str(data, size);
-    HashCombine(hash, str);
-}
-
-bool LoadHash(size_t &hash, const string &file)
+bool LoadHash(uint64_t &hash, const string &file)
 {
     ifstream stream(file);
-    if (stream)
-    {
-        stringstream ss;
-        ss << stream.rdbuf();
-        ss >> hash;
-        return true;
-    }
-    return false;
+    if (!stream)
+        return false;
+
+    stream >> hash;
+    return true;
 }
 
-void SaveHash(size_t hash, const string &file)
+void SaveHash(uint64_t hash, const string &file)
 {
     ofstream stream(file);
-    stream << hash;
+    stream << hash << endl;
 }

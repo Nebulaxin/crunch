@@ -45,8 +45,7 @@ void Packer::Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate)
 {
     MaxRectsBinPack packer(width, height, rotate);
 
-    int ww = 0;
-    int hh = 0;
+    int ww = 0, hh = 0;
     while (!bitmaps.empty())
     {
         auto bitmap = bitmaps.back();
@@ -70,29 +69,28 @@ void Packer::Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate)
         }
 
         // If it's not a duplicate, pack it into the atlas
-        {
-            Rect rect = packer.Insert(bitmap->width + pad, bitmap->height + pad, MaxRectsBinPack::RectBestShortSideFit);
 
-            if (rect.width == 0 || rect.height == 0)
-                break;
+        Rect rect = packer.Insert(bitmap->width + pad, bitmap->height + pad, MaxRectsBinPack::RectBestShortSideFit);
 
-            if (unique)
-                dupLookup[bitmap->hashValue] = static_cast<int>(points.size());
+        if (rect.width == 0 || rect.height == 0)
+            break;
 
-            // Check if we rotated it
-            Point p;
-            p.x = rect.x;
-            p.y = rect.y;
-            p.dupID = -1;
-            p.rot = rotate && bitmap->width != (rect.width - pad);
+        if (unique)
+            dupLookup[bitmap->hashValue] = static_cast<int>(points.size());
 
-            points.push_back(p);
-            this->bitmaps.push_back(bitmap);
-            bitmaps.pop_back();
+        // Check if we rotated it
+        Point p;
+        p.x = rect.x;
+        p.y = rect.y;
+        p.dupID = -1;
+        p.rot = rotate && bitmap->width != (rect.width - pad);
 
-            ww = max(rect.x + rect.width, ww);
-            hh = max(rect.y + rect.height, hh);
-        }
+        points.push_back(p);
+        this->bitmaps.push_back(bitmap);
+        bitmaps.pop_back();
+
+        ww = max(rect.x + rect.width, ww);
+        hh = max(rect.y + rect.height, hh);
     }
 
     while (width / 2 >= ww)
@@ -104,7 +102,7 @@ void Packer::Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate)
 void Packer::SavePng(const string &file)
 {
     Bitmap bitmap(width, height);
-    for (size_t i = 0, j = bitmaps.size(); i < j; ++i)
+    for (int i = 0, j = bitmaps.size(); i < j; ++i)
     {
         if (points[i].dupID < 0)
         {
@@ -120,7 +118,7 @@ void Packer::SavePng(const string &file)
 void Packer::SaveXml(const string &name, ofstream &xml, bool trim, bool rotate)
 {
     xml << "\t<tex n=\"" << name << "\">" << endl;
-    for (size_t i = 0, j = bitmaps.size(); i < j; ++i)
+    for (int i = 0, j = bitmaps.size(); i < j; ++i)
     {
         xml << "\t\t<img n=\"" << bitmaps[i]->name << "\" ";
         xml << "x=\"" << points[i].x << "\" ";
@@ -145,7 +143,7 @@ void Packer::SaveBin(const string &name, ofstream &bin, bool trim, bool rotate)
 {
     WriteString(bin, name);
     WriteShort(bin, (int16_t)bitmaps.size());
-    for (size_t i = 0, j = bitmaps.size(); i < j; ++i)
+    for (int i = 0, j = bitmaps.size(); i < j; ++i)
     {
         WriteString(bin, bitmaps[i]->name);
         WriteShort(bin, (int16_t)points[i].x);
@@ -169,7 +167,7 @@ void Packer::SaveJson(const string &name, ofstream &json, bool trim, bool rotate
     json << "\t\t{" << endl;
     json << "\t\t\t\"name\": \"" << name << "\"," << endl;
     json << "\t\t\t\"images\": [" << endl;
-    for (size_t i = 0, j = bitmaps.size(); i < j; ++i)
+    for (int i = 0, j = bitmaps.size(); i < j; ++i)
     {
         json << "\t\t\t\t{ ";
         json << "\"n\": \"" << bitmaps[i]->name << "\", ";

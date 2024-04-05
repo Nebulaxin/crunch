@@ -51,7 +51,7 @@ struct Packer
 
     vector<Bitmap *> bitmaps;
     vector<Point> points;
-    unordered_map<size_t, int> dupLookup;
+    unordered_map<uint64_t, int> dupLookup;
 
     Packer(int width, int height, int pad);
     void Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate);

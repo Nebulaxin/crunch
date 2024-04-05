@@ -142,8 +142,8 @@ Bitmap::Bitmap(const string &file, const string &name, bool premultiply, bool tr
 
     // Generate a hash for the bitmap
     hashValue = 0;
-    HashCombine(hashValue, static_cast<size_t>(width));
-    HashCombine(hashValue, static_cast<size_t>(height));
+    HashCombine(hashValue, static_cast<uint64_t>(width));
+    HashCombine(hashValue, static_cast<uint64_t>(height));
     HashData(hashValue, reinterpret_cast<char *>(data), sizeof(uint32_t) * width * height);
 }
 

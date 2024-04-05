@@ -27,14 +27,15 @@
 #ifndef hash_hpp
 #define hash_hpp
 
+#include <cstdint>
 #include <string>
 
-void HashCombine(size_t &hash, size_t v);
-void HashString(size_t &hash, const std::string &str);
-void HashFile(size_t &hash, const std::string &file, bool checkTime);
-void HashFiles(size_t &hash, const std::string &root, bool checkTime);
-void HashData(size_t &hash, const char *data, size_t size);
-bool LoadHash(size_t &hash, const std::string &file);
-void SaveHash(size_t hash, const std::string &file);
+void HashCombine(uint64_t &hash, uint64_t v);
+void HashString(uint64_t &hash, const std::string &str);
+void HashFile(uint64_t &hash, const std::string &file, bool checkTime);
+void HashFiles(uint64_t &hash, const std::string &root, bool checkTime);
+void HashData(uint64_t &hash, const char *data, uint64_t size);
+bool LoadHash(uint64_t &hash, const std::string &file);
+void SaveHash(uint64_t hash, const std::string &file);
 
 #endif
