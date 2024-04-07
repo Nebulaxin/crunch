@@ -79,7 +79,10 @@ static void FindPackers(const string &root, const string &name, const string &ex
 
 static int Pack(uint64_t newHash, string &outputDirectory, string &name, vector<string> &inputs, string prefix = "")
 {
-    string outputName = outputDirectory + '/' + name;
+    string outputName = name;
+
+    if (!outputDirectory.empty())
+        outputName = outputDirectory + '/' + outputName;
 
     for (auto &input : inputs)
         if (fs::is_directory(input))
