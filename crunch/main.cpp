@@ -142,8 +142,8 @@ static int Pack(uint64_t newHash, string &outputDirectory, string &name, vector<
         if (options.verbose)
             cout << "packing " << bitmaps.size() << " images..." << endl;
 
-        auto packer = new Packer(options.width, options.height, options.padding);
-        packer->Pack(bitmaps, options.unique, options.rotate);
+        auto packer = new Packer(options.width, options.height, options.padding, options.stretch);
+        packer->Pack(bitmaps, options.unique, options.rotate, options.choiceHeuristic);
         packers.push_back(packer);
 
         if (options.verbose)
@@ -224,7 +224,7 @@ static int Pack(uint64_t newHash, string &outputDirectory, string &name, vector<
             json << '{' << endl;
             json << "\t\"trim\": " << (options.trim ? "true" : "false") << ',' << endl;
             json << "\t\"rotate\": " << (options.rotate ? "true" : "false") << ',' << endl;
-            json << "\t\"textures\": [" << endl;
+            json << "\t\"textures\": {" << endl;
         }
         for (int i = 0; i < packers.size(); ++i)
         {
@@ -238,7 +238,7 @@ static int Pack(uint64_t newHash, string &outputDirectory, string &name, vector<
         }
         if (!options.splitSubdirectories)
         {
-            json << "\t]" << endl;
+            json << "\t}" << endl;
             json << '}' << endl;
         }
         json.close();

@@ -51,6 +51,11 @@ struct Bitmap
     void CopyPixels(const Bitmap *src, int tx, int ty);
     void CopyPixelsRot(const Bitmap *src, int tx, int ty);
     bool Equals(const Bitmap *other) const;
+    void StretchPixels(int tx, int ty, int rectWidth, int rectHeight, int amount);
+
+private:
+    void CopyPixel(int srcX, int srcY, int x, int y);
+    void CopyPixel(const Bitmap *src, int srcX, int srcY, int x, int y);
 };
 
 #endif

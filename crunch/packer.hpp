@@ -31,9 +31,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "third_party/MaxRectsBinPack.h"
 #include "bitmap.hpp"
 
 using namespace std;
+using namespace rbp;
 
 struct Point
 {
@@ -48,13 +50,14 @@ struct Packer
     int width;
     int height;
     int pad;
+    int stretch;
 
     vector<Bitmap *> bitmaps;
     vector<Point> points;
     unordered_map<uint64_t, int> dupLookup;
 
-    Packer(int width, int height, int pad);
-    void Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate);
+    Packer(int width, int height, int pad, int stretch);
+    void Pack(vector<Bitmap *> &bitmaps, bool unique, bool rotate, MaxRectsBinPack::FreeRectChoiceHeuristic choiceHeuristic);
     void SavePng(const string &file);
     void SaveXml(const string &name, ofstream &xml, bool trim, bool rotate);
     void SaveBin(const string &name, ofstream &bin, bool trim, bool rotate);

@@ -28,11 +28,13 @@ options:
   --width N      |  -w   |  max atlas width (overrides --size) (N can be 4096, 2048, 1024, 512, 256, 128, or 64)
   --height N     |  -h   |  max atlas height (overrides --size) (N can be 4096, 2048, 1024, 512, 256, 128, or 64)
   --padding N    |  -pd  |  padding between images (N can be from 0 to 16)
+  --stretch N    |  -st  |  makes images' edges stretched by N pixels (N can be from 0 to 16)
   -----------------------------------------------------------------------------------------------------------------------------------------------
   --premultiply  |  -p   |  premultiplies the pixels of the bitmaps by their alpha channel
   --unique       |  -u   |  remove duplicate bitmaps from the atlas
   --trim         |  -t   |  trims excess transparency off the bitmaps
   --rotate       |  -r   |  enabled rotating bitmaps 90 degrees clockwise when packing
+  --heuristic H  |  -hr  |  use specific heuristic rule for packing images (H can be bssf (BestShortSideFit), blsf (BestLongSideFit), baf (BestAreaFit), blr (BottomLeftRule), cpr (ContactPointRule))
   -----------------------------------------------------------------------------------------------------------------------------------------------
   --binstr T     |  -bs  |  string type in binary format (T can be: 0 - null-termainated, 16 - prefixed (int16), 7 - 7-bit prefixed)
   --force        |  -f   |  ignore the hash, forcing the packer to repack

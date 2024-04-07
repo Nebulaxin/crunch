@@ -174,7 +174,7 @@ void Bitmap::CopyPixels(const Bitmap *src, int tx, int ty)
 {
     for (int y = 0; y < src->height; ++y)
         for (int x = 0; x < src->width; ++x)
-            data[(ty + y) * width + (tx + x)] = src->data[y * src->width + x];
+            CopyPixel(src, x, y, tx + x, ty + y);
 }
 
 void Bitmap::CopyPixelsRot(const Bitmap *src, int tx, int ty)
@@ -182,7 +182,7 @@ void Bitmap::CopyPixelsRot(const Bitmap *src, int tx, int ty)
     int r = src->height - 1;
     for (int y = 0; y < src->width; ++y)
         for (int x = 0; x < src->height; ++x)
-            data[(ty + y) * width + (tx + x)] = src->data[(r - x) * src->width + y];
+            CopyPixel(src, y, r - x, tx + x, ty + y);
 }
 
 bool Bitmap::Equals(const Bitmap *other) const
@@ -190,4 +190,39 @@ bool Bitmap::Equals(const Bitmap *other) const
     if (width == other->width && height == other->height)
         return memcmp(data, other->data, sizeof(uint32_t) * width * height) == 0;
     return false;
+}
+
+void Bitmap::StretchPixels(int rectX, int rectY, int rectWidth, int rectHeight, int amount)
+{
+    int minx = rectX, miny = rectY, maxx = minx + rectWidth - 1, maxy = miny + rectHeight - 1;
+    for (int a = 0; a < amount; a++)
+    {
+        for (int x = minx; x <= maxx; x++)
+        {
+            CopyPixel(x, miny, x, miny - 1);
+            CopyPixel(x, maxy, x, maxy + 1);
+        }
+
+        miny--;
+        maxy++;
+
+        for (int y = miny; y <= maxy; y++)
+        {
+            CopyPixel(minx, y, minx - 1, y);
+            CopyPixel(maxx, y, maxx + 1, y);
+        }
+
+        minx--;
+        maxx++;
+    }
+}
+
+void Bitmap::CopyPixel(const Bitmap *src, int srcX, int srcY, int x, int y)
+{
+    data[y * width + x] = src->data[srcY * src->width + srcX];
+}
+
+void Bitmap::CopyPixel(int srcX, int srcY, int x, int y)
+{
+    data[y * width + x] = data[srcY * width + srcX];
 }

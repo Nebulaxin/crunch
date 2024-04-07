@@ -6,9 +6,10 @@
 #include "options.hpp"
 
 using namespace std;
+using namespace rbp;
 
 const static string expectedSize = "4096, 2048, 1024, 512, 256, 128, or 64",
-                    expectedPadding = "integer from 0 to 16",
+                    expectedPaddingOrStretch = "integer from 0 to 16",
                     expectedBinaryStringFormat = "0, 16 or 7";
 
 void PrintHelp(int argc, const char *argv[])
@@ -56,6 +57,16 @@ static int GetPadding(const string &str)
     return 1;
 }
 
+static int GetStretch(const string &str)
+{
+    for (int i = 0; i <= 16; ++i)
+        if (str == to_string(i))
+            return i;
+    cerr << "invalid stretch value: " << str << endl;
+    exit(EXIT_FAILURE);
+    return 0;
+}
+
 static BinaryStringFormat GetBinaryStringFormat(const string &str)
 {
     if (str == "0")
@@ -66,6 +77,23 @@ static BinaryStringFormat GetBinaryStringFormat(const string &str)
         return BinaryStringFormat::Prefix7;
 
     cerr << "invalid binary string format: " << str << endl;
+    exit(EXIT_FAILURE);
+}
+
+static MaxRectsBinPack::FreeRectChoiceHeuristic GetChoiceHeuristic(const string &str)
+{
+    if (str == "bssf")
+        return MaxRectsBinPack::FreeRectChoiceHeuristic::RectBestShortSideFit;
+    if (str == "blsf")
+        return MaxRectsBinPack::FreeRectChoiceHeuristic::RectBestLongSideFit;
+    if (str == "baf")
+        return MaxRectsBinPack::FreeRectChoiceHeuristic::RectBestAreaFit;
+    if (str == "blr")
+        return MaxRectsBinPack::FreeRectChoiceHeuristic::RectBottomLeftRule;
+    if (str == "cpr")
+        return MaxRectsBinPack::FreeRectChoiceHeuristic::RectContactPointRule;
+
+    cerr << "invalid heuristic: " << str << endl;
     exit(EXIT_FAILURE);
 }
 
@@ -125,8 +153,15 @@ void ParseArguments(int argc, const char *argv[], int offset)
         else if (arg == "--padding" || arg == "-pd")
         {
             if (noArgumentAhead)
-                PrintNoArgument(expectedPadding, arg);
+                PrintNoArgument(expectedPaddingOrStretch, arg);
             options.padding = GetPadding(nextArg);
+            i++;
+        }
+        else if (arg == "--stretch" || arg == "-st")
+        {
+            if (noArgumentAhead)
+                PrintNoArgument(expectedPaddingOrStretch, arg);
+            options.stretch = GetStretch(nextArg);
             i++;
         }
 
@@ -140,6 +175,13 @@ void ParseArguments(int argc, const char *argv[], int offset)
             options.trim = true;
         else if (arg == "--rotate" || arg == "-r")
             options.rotate = true;
+        else if (arg == "--heuristic" || arg == "-hr")
+        {
+            if (noArgumentAhead)
+                PrintNoArgument(expectedBinaryStringFormat, arg);
+            options.choiceHeuristic = GetChoiceHeuristic(nextArg);
+            i++;
+        }
 
         // ================================================================
 

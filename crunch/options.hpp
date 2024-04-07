@@ -1,6 +1,10 @@
 #ifndef options_hpp
 #define options_hpp
 
+#include "third_party/MaxRectsBinPack.h"
+
+using namespace rbp;
+
 enum class BinaryStringFormat : char
 {
     NullTerminated = 0,
@@ -17,11 +21,13 @@ struct Options
     int width = 4096;
     int height = 4096;
     int padding = 1;
+    int stretch = 0;
 
     bool premultiply = false;
     bool unique = false;
     bool trim = false;
     bool rotate = false;
+    MaxRectsBinPack::FreeRectChoiceHeuristic choiceHeuristic = MaxRectsBinPack::FreeRectChoiceHeuristic::RectBestShortSideFit;
 
     BinaryStringFormat binaryStringFormat = BinaryStringFormat::NullTerminated;
     bool force = false;
