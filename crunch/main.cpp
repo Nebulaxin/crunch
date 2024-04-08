@@ -69,12 +69,11 @@ static void LoadBitmaps(const string &root, const string &prefix, vector<Bitmap 
     {
         fs::path path = entry.path();
         string pathName = path.string();
-        string fileName = path.filename().string();
 
         if (entry.is_directory())
-            LoadBitmaps(pathName, prefix + fileName + '/', bitmaps);
+            LoadBitmaps(pathName, prefix + path.filename().string() + '/', bitmaps);
         else if (path.extension().string() == ".png")
-            LoadBitmap(pathName, NormalizePath(prefix + fileName), bitmaps);
+            LoadBitmap(pathName, NormalizePath(prefix + path.stem().string()), bitmaps);
     }
 }
 
