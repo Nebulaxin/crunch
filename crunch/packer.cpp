@@ -193,5 +193,5 @@ void Packer::SaveJson(const string &name, ofstream &json, bool trim, bool rotate
             json << ",";
         json << endl;
     }
-    json << "\t\t}" << endl;
+    json << "\t\t}";
 }

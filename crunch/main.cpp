@@ -411,7 +411,7 @@ int main(int argc, const char *argv[])
         json << '{' << endl;
         json << "\t\"trim\": " << (options.trim ? "true" : "false") << ',' << endl;
         json << "\t\"rotate\": " << (options.rotate ? "true" : "false") << ',' << endl;
-        json << "\t\"textures\": [" << endl;
+        json << "\t\"textures\": {" << endl;
         for (int i = 0; i < cachedPackers.size(); ++i)
         {
             ifstream jsonCache(cachedPackers[i]);
@@ -421,7 +421,7 @@ int main(int argc, const char *argv[])
                 json << ',';
             json << endl;
         }
-        json << "\t]" << endl;
+        json << "\t}" << endl;
         json << '}' << endl;
         json.close();
     }
