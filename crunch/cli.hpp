@@ -51,17 +51,17 @@ binary format:
   [byte] string type (0 - null-termainated, 1 - prefixed (int16), 2 - 7-bit prefixed)
   [int16] num_textures (below block is repeated this many times)
     [string] name
-      [int16] num_images (below block is repeated this many times)
-          [string] img_name
-          [int16] img_x
-          [int16] img_y
-          [int16] img_width
-          [int16] img_height
-          [int16] img_frame_x         (if --trim enabled)
-          [int16] img_frame_y         (if --trim enabled)
-          [int16] img_frame_width     (if --trim enabled)
-          [int16] img_frame_height    (if --trim enabled)
-          [byte] img_rotated          (if --rotate enabled)
+    [int16] num_images (below block is repeated this many times)
+      [string] img_name
+      [int16] img_x
+      [int16] img_y
+      [int16] img_width
+      [int16] img_height
+      [int16] img_frame_x         (if --trim enabled)
+      [int16] img_frame_y         (if --trim enabled)
+      [int16] img_frame_width     (if --trim enabled)
+      [int16] img_frame_height    (if --trim enabled)
+      [byte] img_rotated          (if --rotate enabled)
     )";
 
 void PrintHelp(int argc, const char *argv[]);
