@@ -61,16 +61,15 @@ void HashString(uint64_t &hash, const string &str)
 
 void HashFile(uint64_t &hash, const string &file, bool checkTime)
 {
-    directory_entry entry{file};
     if (checkTime)
     {
-        auto time = entry.last_write_time();
-        HashCombine(hash, std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count());
+        auto time = last_write_time(file);
+        HashCombine(hash, chrono::duration_cast<chrono::seconds>(time.time_since_epoch()).count());
         return;
     }
-
-    ifstream stream(file, ios::binary);
-    int size = entry.file_size();
+    ifstream stream(file, ios::binary | ios::ate);
+    streamsize size = stream.tellg();
+    stream.seekg(0, ios::beg);
     vector<char> buffer(size);
     if (!stream.read(buffer.data(), size))
     {
@@ -80,14 +79,28 @@ void HashFile(uint64_t &hash, const string &file, bool checkTime)
     HashData(hash, buffer.data(), size);
 }
 
+static void HashFile(uint64_t &hash, const directory_entry &file, bool checkTime)
+{
+    if (checkTime)
+    {
+        auto time = file.last_write_time();
+        HashCombine(hash, chrono::duration_cast<chrono::seconds>(time.time_since_epoch()).count());
+    }
+    else
+        HashFile(hash, file.path().string(), false);
+}
+
 void HashFiles(uint64_t &hash, const string &root, bool checkTime)
 {
-    for (const auto &entry : recursive_directory_iterator(root))
+    for (const auto &entry : directory_iterator(root))
     {
         if (entry.is_directory())
+        {
             HashString(hash, entry.path().string());
+            HashFiles(hash, entry.path().string(), checkTime);
+        }
         else
-            HashFile(hash, entry.path().string(), checkTime);
+            HashFile(hash, entry, checkTime);
     }
 }
 

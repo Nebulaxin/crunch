@@ -63,6 +63,21 @@ static void LoadBitmap(const string &path, const string &name, vector<Bitmap *> 
     bitmaps.push_back(new Bitmap(path, name, options.premultiply, options.trim));
 }
 
+static void LoadBitmaps(const string &root, const string &prefix, vector<Bitmap *> &bitmaps)
+{
+    for (const auto &entry : fs::directory_iterator(root))
+    {
+        fs::path path = entry.path();
+        string pathName = path.string();
+        string fileName = path.filename().string();
+
+        if (entry.is_directory())
+            LoadBitmaps(pathName, prefix + fileName + '/', bitmaps);
+        else if (path.extension().string() == ".png")
+            LoadBitmap(pathName, NormalizePath(prefix + fileName), bitmaps);
+    }
+}
+
 static void FindPackers(const string &root, const string &name, const string &ext, vector<string> &packers)
 {
     for (auto &entry : fs::directory_iterator(root))
@@ -118,20 +133,9 @@ static int Pack(uint64_t newHash, string &outputDirectory, string &name, vector<
     for (auto &input : inputs)
     {
         if (fs::is_directory(input))
-        {
-            for (auto &entry : fs::recursive_directory_iterator(input))
-            {
-                if (entry.is_directory())
-                    continue;
-
-                fs::path path = entry.path();
-
-                if (path.extension().string() == ".png")
-                    LoadBitmap(NormalizePath(path.string()), prefix + NormalizePath(fs::relative(path.parent_path() / path.stem(), input).string()), bitmaps);
-            }
-        }
+            LoadBitmaps(input, prefix, bitmaps);
         else
-            LoadBitmap(NormalizePath(input), prefix + NormalizePath(input), bitmaps);
+            LoadBitmap(input, prefix + input, bitmaps);
     }
 
     // Sort the bitmaps by area
