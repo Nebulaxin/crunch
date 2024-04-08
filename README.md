@@ -1,4 +1,4 @@
-# crunch v0.12
+# crunch v0.13
 
 This is a command line tool that will pack a bunch of images into a single, larger image. It was designed for [Celeste](http://www.celestegame.com/), but could be very helpful for other games.
 
@@ -60,24 +60,26 @@ bin/atlases/atlas.hash
 
 | option          | alias           | description     |
 | --------------- | --------------- | --------------- |
-| `-d`            | `--default`     | use default settings (`-x -p -t -u`) |
-| `-x`            | `--xml`         | saves the atlas data as a `.xml` file |
-| `-b`            | `--binary`      | saves the atlas data as a `.bin` file |
-| `-j`            | `--json`        | saves the atlas data as a `.json` file |
-| `-p`            | `--premultiply` | premultiplies the pixels of the bitmaps by their alpha channel |
-| `-t`            | `--trim`        | trims excess transparency off the bitmaps |
-| `-v`            | `--verbose`     | print to the debug console as the packer works |
-| `-f`            | `--force`       | ignore caching, forcing the packer to repack |
-| `-u`            | `--unique`      | remove duplicate bitmaps from the atlas |
-| `-r`            | `--rotate`      | enabled rotating bitmaps 90 degrees clockwise when packing |
-| `-s#`           | `--size#`       | max atlas size (`#` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
-| `-w#`           | `--width#`      | max atlas width (overrides `--size`) (`#` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
-| `-h#`           | `--height#`     | max atlas height (overrides `--size`) (`#` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
-| `-p#`           | `--pad#`        | padding between images (`#` can be from `0` to `16`) |
-| `-bs%`          | `--binstr%`     | string type in binary format (`%` can be: `n` - null-termainated, `p` - prefixed (int16), `7` - 7-bit prefixed) |
-| `-tm`           | `--time`        | use file's last write time instead of its contents for hashing |
-| `-sp`           | `--split`       | split output textures by subdirectories |
-| `-nz`           | `--nozero`      | if there's only one packed texture, then zero at the end of its name will be omitted (ex. `images0.png` -> `images.png`) |
+| `--default`     | `-d`            | use default settings (`-x -p -t -u`) |
+| `--xml`         | `-x`            | saves the atlas data as a `.xml` file |
+| `--json`        | `-j`            | saves the atlas data as a `.json` file |
+| `--binary`      | `-b`            | saves the atlas data as a `.bin` file |
+| `--size N`      | `-s N`          | max atlas size (`N` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
+| `--width N`     | `-w N`          | max atlas width (overrides `--size`) (`N` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
+| `--height N`    | `-h N`          | max atlas height (overrides `--size`) (`N` can be `4096`, `2048`, `1024`, `512`, `256`, `128`, or `64`) |
+| `--pad N`       | `-pd N`         | padding between images (`N` can be from `0` to `16`) |
+| `--stretch N`   | `-st N`         | makes images' edges stretched by N pixels (`N` can be from `0` to `16`) |
+| `--premultiply` | `-p`            | premultiplies the pixels of the bitmaps by their alpha channel |
+| `--unique`      | `-u`            | remove duplicate bitmaps from the atlas |
+| `--trim`        | `-t`            | trims excess transparency off the bitmaps |
+| `--rotate`      | `-r`            | enabled rotating bitmaps 90 degrees clockwise when packing |
+| `--heuristic`   | `-hr`           | use specific heuristic rule for packing images (`H` can be `bssf` (BestShortSideFit), `blsf` (BestLongSideFit), `baf` (BestAreaFit), `blr` (BottomLeftRule), `cpr` (ContactPointRule)) |
+| `--binstr T`    | `-bs T`         | string type in binary format (`T` can be: `0` - null-termainated, `16` - prefixed (int16), `7` - 7-bit prefixed) |
+| `--force`       | `-f`            | ignore caching, forcing the packer to repack |
+| `--verbose`     | `-v`            | print to the debug console as the packer works |
+| `--time`        | `-tm`           | use file's last write time instead of its content for hashing |
+| `--split`       | `-sp`           | split output textures by subdirectories |
+| `--nozero`      | `-nz`           | if there's only one packed texture, then zero at the end of its name will be omitted (ex. `images0.png` -> `images.png`) |
 
 ## Binary Format
 
@@ -144,12 +146,15 @@ But there're some limitations:
 - multiple inputs and images as inputs are not supported
 - images in input directory itself will be ignored and not packed
 
-## Building on Linux
+## Building
 
-```text
-cd linux/
-make
-```
+### Windows
+
+idk lol
+
+### Linux
+
+idk lol
 
 ## License
 
