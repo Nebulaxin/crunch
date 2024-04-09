@@ -150,11 +150,39 @@ But there're some limitations:
 
 ### Windows
 
-idk lol
+Create `build` directory:
+
+```text
+mkdir build
+cd build
+```
+
+- Visual Studio:
+
+```text
+cmake -DCMAKE_BUILD_TYPE=Release ..
+```
+
+- MinGW:
+
+```text
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=C:/your/mingw/path/gcc.exe -DCMAKE_CXX_COMPILER=C:/your/mingw/path/g++.exe -G "MinGW Makefiles" ..
+```
+
+Build command is same for both:
+
+```text
+cmake --build . --config Release
+```
 
 ### Linux
 
-idk lol
+```text
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+```
 
 ## License
 
